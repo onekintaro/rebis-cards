@@ -5,7 +5,9 @@
   "private": true,
   "scripts": {
     "dev": "vite build --watch",
+    "prebuild": "node scripts/gen-version.js",
     "build": "vite build",
+    "release:check": "node -e \"console.log(require('./package.json').version)\"",
     "clean": "rimraf dist"
   },
   "dependencies": {
