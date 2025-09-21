@@ -1,0 +1,144 @@
+# greetings.yaml – Daten für rebis-header-card
+# -----------------------------------------------------------------------------
+# Ablage:
+#   Empfohlen:  /config/rebis-cards/greetings.yaml
+#   (Die Card mappt /config → /local automatisch. Auch /hacsfiles/... wird erkannt.)
+#
+# Nutzung in Lovelace:
+#   1) Minimal (lädt Default-Datei /config/rebis-cards/greetings.yaml):
+#      type: custom:rebis-header-card
+#      owner: Aurora
+#
+#   2) Datei explizit angeben:
+#      type: custom:rebis-header-card
+#      owner: Aurora
+#      data: /config/rebis-cards/greetings.yaml       # ODER data_url: ...
+#
+#   3) Daten inline statt Datei:
+#      type: custom:rebis-header-card
+#      owner: Aurora
+#      data:
+#        settings: { useBuiltIns: true }
+#        common:   { ... }    # gleiches Schema wie unten
+#        personal: { ... }
+#
+# Hinweise:
+# - Platzhalter: {{name}}, {{nick}}, {{user}}, {{city}}, {{country}}, {{emoji}}, {{temp}}, {{alerts}}
+# - Zufallsauswahl: {{oneOf:Option A|Option B|name|nick|emoji}}
+# - keys unter "personal" sind lowercase; sie matchen owner/owner_key (case-insensitive).
+# - settings.useBuiltIns: true mischt deine Listen mit den eingebauten Default-Listen.
+# - Fallback: Wenn Datei fehlt/leer ist, verwendet die Card automatisch Built-ins.
+# -----------------------------------------------------------------------------
+
+settings:
+  useBuiltIns: true
+  weekdays: ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"]
+  addressFormat: ""   # (optional, aktuell nur informativ)
+
+common:
+  emojis: ["✨","🌟","💜","🚀","🦊","🎮","☕","🌈","🧃","🍀","🌙","🎧"]
+
+  greets:
+    morning:
+      - "{{oneOf:Guten Morgen|Hejho|Morn}} {{oneOf:name|nick}} {{emoji}}"
+      - "Rise & Shine, {{oneOf:nick|user}}!"
+      - "Hallo {{name}} – Kaffee schon am Start? ☕"
+    day:
+      - "{{oneOf:Hallo|Hey|Hoi|Servus}} {{oneOf:name|nick}}"
+      - "Grüezi mitenand!"
+      - "Wie läuft’s in {{city}}?"
+    evening:
+      - "Guten Abend {{oneOf:name|nick}} {{emoji}}"
+      - "Bonsoir, {{nick}} – {{city}} schön heute?"
+      - "N’Abend! Zeit für Chill & Snacks?"
+    night:
+      - "Noch wach, {{oneOf:nick|name}}? 🌙"
+      - "Night Owl Mode {{emoji}}"
+      - "Bett ruft – morgen mehr Energie! ✨"
+
+  mottos:
+    morning:
+      - "Neuer Tag, neues Quest! {{emoji}}"
+      - "Hydrate first 💧 – {{city}} {{temp}}"
+      - "Deep Work an – Störer aus."
+    day:
+      - "You got this, {{oneOf:name|nick}}! 🚀"
+      - "5-Minuten-Tidy lohnt sich."
+      - "Kleiner Walk? Frische Luft in {{city}}."
+    evening:
+      - "Golden Hour ✨"
+      - "Save & Commit – dann chillen."
+      - "Playlist an & runterfahren 🎧"
+    night:
+      - "Backup läuft? Dann Bett 😴"
+      - "Tomorrow-You dankt dir."
+      - "Schlaf = Upgrade {{emoji}} {{alerts}}"
+
+# -----------------------------------------------------------------------------
+# Persönliche Profile
+# -----------------------------------------------------------------------------
+personal:
+
+  aurora:
+    name: "Aurora"
+    nicknames: ["Rory","Rora","Auri"]
+    emojis: ["✨","🌙","🧃","🎧"]
+    home_title: "Auroras Loft"
+    location_entity: "device_tracker.aurora_phone"
+    geolocation_entity: "sensor.aurora_geocoded_location"
+    weather_entity: "weather.aurora_home"
+    weather_alarm_entity: "binary_sensor.aurora_weather_alert"
+
+    greets:
+      morning:
+        - "Morn, {{oneOf:nick|name}} ✨"
+        - "Guten Morgen aus {{city}}, {{country}}!"
+      evening:
+        - "Cosy Time incoming, {{nick}} {{emoji}}"
+    mottos:
+      day:
+        - "Tea-Time & Fokus ☕"
+        - "Kleiner Stretch – big effect."
+      night:
+        - "Mond hell über {{city}} – gute Nacht!"
+
+  kai:
+    name: "Kai"
+    nicknames: ["K.","Kaix","Kay"]
+    emojis: ["🌊","🎮","☕","🚀"]
+    home_title: "Kai HQ"
+    location_entity: "device_tracker.kai_pixel"
+    geolocation_entity: "sensor.kai_location"
+    weather_entity: "weather.kai_home"
+
+    greets:
+      day:
+        - "{{oneOf:Hey|Hoi|Yo}} {{oneOf:name|nick}} – ready to ship? 🚀"
+        - "Grüezi, {{nick}}! {{emoji}}"
+    mottos:
+      morning:
+        - "First sip, then ship ☕"
+      evening:
+        - "GGs heute? 🎮"
+        - "Review & Plan für morgen (2 Bullets)."
+
+  lumi:
+    name: "Lumi"
+    nicknames: ["Lu","Lum","Lumi⭐"]
+    emojis: ["❄️","🦊","🌟","🍵"]
+    home_title: "Lumi’s Cabin"
+    location_entity: "device_tracker.lumi_iphone"
+    geolocation_entity: "sensor.lumi_geocoded_location"
+    weather_entity: "weather.lumi_cabin"
+    weather_alarm_entity: "binary_sensor.lumi_meteo_alert"
+
+    greets:
+      morning:
+        - "Bun di {{oneOf:name|nick}}! ❄️"
+        - "Guten Morgen – {{city}} schaut hübsch aus!"
+    mottos:
+      evening:
+        - "Kerzen an & runterfahren ✨"
+        - "Hot Tea, good vibes 🍵"
+      night:
+        - "Nordlicht-Chancen? 🌌  {{alerts}}"
