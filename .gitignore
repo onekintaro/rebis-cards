@@ -6,4 +6,6 @@
 /data_pers
 /dist
 /dist/*
+dist/rebis-cards.js
 *.log
+

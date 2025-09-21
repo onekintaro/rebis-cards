@@ -11,9 +11,9 @@ const pkgPath = resolve(__dirname, "..", "package.json");
 const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
 
 // Datei schreiben
-const outPath = resolve(__dirname, "..", "src", "version.ts");
+const outPath = resolve(__dirname, "..", "src", "version.d.ts");
 const out = `// ⚠️ auto-generated – nicht editieren
 export const REBIS_CARDS_VERSION = '${pkg.version}';
 `;
 writeFileSync(outPath, out, "utf8");
-console.log("version.ts geschrieben:", pkg.version);
+console.log("version.d.ts geschrieben:", pkg.version);

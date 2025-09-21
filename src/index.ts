@@ -1,4 +1,4 @@
-import { REBIS_CARDS_VERSION } from "./version";
+import { REBIS_CARDS_VERSION } from "./version.d";
 const V = REBIS_CARDS_VERSION;
 console.info(
   "%c 🌸 Rebis Cards 🌸 %c v" + V + " ",
