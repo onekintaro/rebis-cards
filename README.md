@@ -10,14 +10,14 @@ Rebis HA Cards
    Einstellungen → Dashboards → Ressourcen → Hinzufügen  
    **URL:** `/hacsfiles/rebis-cards/rebis-cards.js` · **Typ:** *JavaScript-Modul*. :contentReference[oaicite:6]{index=6}
 
+## Manuell
+1. dist/rebis-cards.js nach /config/www/ kopieren.
+2. In Einstellungen → Dashboards → Ressourcen:
+   - URL: /local/rebis-cards.js
+   - Typ: JavaScript Module
+
 ### Verwendung
-```yaml
-type: custom:rebis-header-card
-owner: Rebecca
-home_title: Rebis Home
-location_entity: device_tracker.rebi_mobile
-address_entity: sensor.rebi_geocoded_location
-weather:
-  temp: sensor.wetter_alarm_zurich_stadtkreis_12_zh_weather_temperature
-  alerts_count: sensor.wetter_alarm_zurich_stadtkreis_12_zh_meteo_alerts_alarm_count
-  alerts_info: sensor.wetter_alarm_zurich_stadtkreis_12_zh_meteo_alerts_info
+
+### Header-Card: docs/de/header-card.md
+
+Weitere Karten in Arbeit (WIP)
