@@ -107,10 +107,12 @@ class RebisHeaderCard extends LitElement {
         const s = new Date(d.getFullYear(), 0, 0);
         return Math.floor((d.getTime() - s.getTime() + ((s.getTimezoneOffset() - d.getTimezoneOffset()) * 60000)) / 86400000);
     }
+
     private weekdays(): string[] {
         const wd = this._data?.settings?.weekdays;
-        if (Array.isArray(wd) && wd.length === 7) return wd as string[];
-        return ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+        return (Array.isArray(wd) && wd.length === 7 ? wd : [
+            "Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"
+        ]) as string[];
     }
 
     private bucket(h: number) { return h < 5 ? "night" : (h < 12 ? "morning" : (h < 18 ? "day" : "evening")); }
@@ -194,7 +196,7 @@ class RebisHeaderCard extends LitElement {
     }
 
     private applyPlaceholders(s: string, ctx: Record<string, string>) {
-        return s.replace(/\{\{\s*(name|nick|user|city|country|emoji)\s*\}\}/g, (_m, k) => ctx[k] ?? "");
+        return s.replace(/\{\{\s*(name|nick|user|city|country|emoji|temp|alerts)\s*\}\}/g, (_m, k) => ctx[k] ?? "");
     }
 
 
@@ -202,6 +204,10 @@ class RebisHeaderCard extends LitElement {
         if (!arr || !arr.length) return "" as unknown as T;
         const i = ((seed % arr.length) + arr.length) % arr.length;
         return arr[i];
+    }
+
+    private collapseSpaces(s: string) {
+        return s.replace(/\s{2,}/g, " ").replace(/\s+([,.!?])/g, "$1").trim();
     }
 
     private listsFor(owner: string) {
@@ -304,6 +310,9 @@ class RebisHeaderCard extends LitElement {
             }
         }
 
+        const tempStr = wTemp ? `${wTemp}°C` : "";
+        const alertsStr = wCount > 0 ? (wInfo || `${wCount} Alarm(e)`) : "";
+
         const { greets, mottos } = this.listsFor(c.owner);
         const greetRaw = this.pick(greets[bucket], seed);
         const mottoRaw = this.pick(mottos[bucket], (doy + h) * 3 + m);
@@ -315,14 +324,36 @@ class RebisHeaderCard extends LitElement {
         const emojiA = this.pick(prof.emojis, seed * 5 + 1);
         const emojiB = this.pick(prof.emojis, seed * 7 + 3);
 
-        const ctx = { name: prof.ownerName, nick, user: currentUser, city, country, emoji: emojiTpl };
-        const greet = this.applyPlaceholders(this.applyOneOf(greetRaw, seed, ctx), ctx);
-        const motto = this.applyPlaceholders(this.applyOneOf(mottoRaw, (doy + h) * 13 + m, ctx), ctx);
+        const ctx = {
+            name: prof.ownerName, nick, user: currentUser,
+            city, country, emoji: emojiTpl,
+            temp: tempStr, alerts: alertsStr
+        };
+
+        const greet = this.collapseSpaces(
+            this.applyPlaceholders(this.applyOneOf(greetRaw, seed, ctx), ctx)
+        );
+        const motto = this.collapseSpaces(
+            this.applyPlaceholders(this.applyOneOf(mottoRaw, (doy + h) * 13 + m, ctx), ctx)
+        );
+
+        const zoneNice = String(locState || "")
+            .replace(/^zone\./, "")
+            .replace(/_/g, " ")
+            .trim();
 
         let locFriendly = "";
-        if (locState === "home") locFriendly = "Willkommen <b>Zuhause</b>";
-        else if (locState === "not_home") locFriendly = "Gerade <b>Unterwegs</b>?";
-        else if (typeof locState === "string" && locState) locFriendly = `Aktuell in <b>${city}, ${country}</b>`;
+        if (locState === "home") {
+            locFriendly = "Willkommen <b>Zuhause</b>";
+        } else if (locState === "not_home") {
+            locFriendly = "Gerade <b>Unterwegs</b>?";
+        } else if (city || country) {
+            locFriendly = `Aktuell in <b>${[city, country].filter(Boolean).join(", ")}</b>`;
+        } else if (zoneNice) {
+            locFriendly = `Aktuell in <b>${zoneNice}</b>`;
+        }
+
+        const addrLine = addrShort && !locFriendly.includes(addrShort) ? html` · 📍 ${addrShort}` : "";
 
         const isOwner = currentUser.toLowerCase() === c.owner.toLowerCase();
         const lineDashboard = isOwner ? `Dein Zuhause: ${homeTitle}` : `Zu Gast bei <b>${prof.ownerName}</b> – ${homeTitle}`;
@@ -338,7 +369,7 @@ class RebisHeaderCard extends LitElement {
       <h2>${unsafeHTML(lineDashboard)}</h2>
       <div class="login">${unsafeHTML(lineLogin)}</div>
 
-      <p>${unsafeHTML(locFriendly)}${addrShort ? html` · 📍 ${addrShort}` : ""} ${emojiB}</p>
+      <p>${unsafeHTML(locFriendly)}${addrLine} ${emojiB}</p>
       <p><em>${motto}</em></p>
       <p><strong>Heute:</strong> ${weekday}, ${dateStr} – ${timeStr}.
       ${wTemp || wCount ? html`<br><strong>Wetter:</strong> ${wTemp ? `${wTemp}°C` : ""}${wCount > 0 && wInfo ? ` · ⚠️ ${wInfo}` : ""}` : ""}</p>
