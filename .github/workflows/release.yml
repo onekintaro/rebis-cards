@@ -1,0 +1,112 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "package.json"
+      - "src/**"
+      - "vite.config.*"
+      - "rollup.config.*"
+      - "tsconfig.*"
+      - "package-lock.json"
+      - "pnpm-lock.yaml"
+      - "yarn.lock"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# verhindert doppelte gleichzeitige Runs auf main
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build (writes src/version.ts from package.json via prebuild)
+        run: npm run build
+
+      - name: Read version
+        id: ver
+        run: echo "version=$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
+
+      - name: Check bundle exists & is sane
+        run: |
+          test -f dist/rebis-cards.js || (echo "dist/rebis-cards.js fehlt" && exit 1)
+          # simple sanity check: > 2KB
+          BYTES=$(wc -c < dist/rebis-cards.js)
+          test "$BYTES" -gt 2000 || (echo "Bundle zu klein ($BYTES B) → vermutlich kaputt" && exit 1)
+
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum rebis-cards.js > rebis-cards.js.sha256
+          sha256sum rebis-cards.js.map > rebis-cards.js.map.sha256 || true
+
+      - name: Upload artifact (CI)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Export version for downstream job
+        run: echo "VERSION=${{ steps.ver.outputs.version }}" >> $GITHUB_ENV
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Get version
+        id: ver
+        run: echo "version=${{ env.VERSION }}" >> $GITHUB_OUTPUT
+
+      - name: Tag exists?
+        id: tagcheck
+        run: |
+          git fetch --tags
+          if git rev-parse "v${{ steps.ver.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      # Release nur erstellen, wenn Tag noch NICHT existiert.
+      # (Wenn du stattdessen "updaten" willst, nimm die if-Zeile raus.)
+      - name: Create GitHub Release
+        if: steps.tagcheck.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.ver.outputs.version }}
+          name: Rebis Cards v${{ steps.ver.outputs.version }}
+          generate_release_notes: true
+          make_latest: true
+          # wichtig: wenn Datei fehlt → Step failt → kein halber Release
+          fail_on_unmatched_files: true
+          files: |
+            dist/rebis-cards.js
+            dist/rebis-cards.js.map
+            dist/rebis-cards.js.sha256
+            dist/rebis-cards.js.map.sha256
