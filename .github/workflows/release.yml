@@ -17,6 +17,7 @@ on:
 permissions:
   contents: write
 
+# verhindert doppelte gleichzeitige Runs auf main
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: true
@@ -24,9 +25,6 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # 🟣 Exportiere die Version als Job-Output:
-    outputs:
-      version: ${{ steps.ver.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,10 +46,14 @@ jobs:
       - name: Read version
         id: ver
         run: echo "version=$(npm pkg get version | tr -d '\"')" >> $GITHUB_OUTPUT
+        # alternativ:
+        # run: echo "version=$(jq -r .version package.json)" >> $GITHUB_OUTPUT
+
 
       - name: Check bundle exists & is sane
         run: |
           test -f dist/rebis-cards.js || (echo "dist/rebis-cards.js fehlt" && exit 1)
+          # simple sanity check: > 2KB
           BYTES=$(wc -c < dist/rebis-cards.js)
           test "$BYTES" -gt 2000 || (echo "Bundle zu klein ($BYTES B) → vermutlich kaputt" && exit 1)
 
@@ -67,6 +69,9 @@ jobs:
           name: dist
           path: dist/
 
+      - name: Export version for downstream job
+        run: echo "VERSION=${{ steps.ver.outputs.version }}" >> $GITHUB_ENV
+
   release:
     needs: build
     runs-on: ubuntu-latest
@@ -77,24 +82,15 @@ jobs:
           name: dist
           path: dist
 
-      # 🟣 Version aus build-Job holen
       - name: Get version
         id: ver
-        run: echo "version=${{ needs.build.outputs.version }}" >> $GITHUB_OUTPUT
-
-      # 🟣 Guard – brich ab, wenn leer
-      - name: Guard: version must not be empty
-        run: |
-          if [ -z "${{ steps.ver.outputs.version }}" ]; then
-            echo "Version from build job is empty. Check build.outputs.version." >&2
-            exit 1
-          fi
+        run: echo "version=${{ env.VERSION }}" >> $GITHUB_OUTPUT
 
       - name: Tag exists? (remote)
         id: tagcheck
         env:
-          REPO: ${{ github.repository }}
-          VER:  v${{ needs.build.outputs.version }}   # 🟣 hier jetzt korrekt
+          REPO: ${{ github.repository }}   # z.B. user/rebis-cards
+          VER:  v${{ needs.build.outputs.version }}
         run: |
           if git ls-remote --tags "https://github.com/${REPO}.git" "refs/tags/${VER}" | grep -q .; then
             echo "exists=true" >> $GITHUB_OUTPUT
@@ -110,18 +106,20 @@ jobs:
           else
             echo "map=" >> $GITHUB_OUTPUT
           fi
+          
 
+      # Release nur erstellen, wenn Tag noch NICHT existiert.
+      # (Wenn du stattdessen "updaten" willst, nimm die if-Zeile raus.)
       - name: Create GitHub Release
         if: steps.tagcheck.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.ver.outputs.version }}                # 🟣 nie wieder nur "v"
+          tag_name: v${{ steps.ver.outputs.version }}
           name: Rebis Cards v${{ steps.ver.outputs.version }}
           generate_release_notes: true
           make_latest: true
+          # wichtig: wenn Datei fehlt → Step failt → kein halber Release
           fail_on_unmatched_files: true
           files: |
             dist/rebis-cards.js
             ${{ steps.hasmap.outputs.map }}
-            dist/rebis-cards.js.sha256
-            dist/rebis-cards.js.map.sha256
