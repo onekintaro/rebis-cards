@@ -45,7 +45,10 @@ jobs:
 
       - name: Read version
         id: ver
-        run: echo "version=$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
+        run: echo "version=$(npm pkg get version | tr -d '\"')" >> $GITHUB_OUTPUT
+        # alternativ:
+        # run: echo "version=$(jq -r .version package.json)" >> $GITHUB_OUTPUT
+
 
       - name: Check bundle exists & is sane
         run: |
