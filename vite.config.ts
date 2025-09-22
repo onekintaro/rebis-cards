@@ -13,6 +13,7 @@ export default defineConfig({
       name: "RebisCards",
       formats: ["es"]
     },
+    sourcemap: true,
     outDir,
     emptyOutDir: false,
     rollupOptions: {
