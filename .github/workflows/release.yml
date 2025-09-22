@@ -86,11 +86,13 @@ jobs:
         id: ver
         run: echo "version=${{ env.VERSION }}" >> $GITHUB_OUTPUT
 
-      - name: Tag exists?
+      - name: Tag exists? (remote)
         id: tagcheck
+        env:
+          REPO: ${{ github.repository }}   # z.B. user/rebis-cards
+          VER:  v${{ needs.build.outputs.version }}
         run: |
-          git fetch --tags
-          if git rev-parse "v${{ steps.ver.outputs.version }}" >/dev/null 2>&1; then
+          if git ls-remote --tags "https://github.com/${REPO}.git" "refs/tags/${VER}" | grep -q .; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
