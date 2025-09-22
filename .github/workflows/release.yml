@@ -98,6 +98,16 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Detect sourcemap
+        id: hasmap
+        run: |
+          if [ -f dist/rebis-cards.js.map ]; then
+            echo "map=dist/rebis-cards.js.map" >> $GITHUB_OUTPUT
+          else
+            echo "map=" >> $GITHUB_OUTPUT
+          fi
+          
+
       # Release nur erstellen, wenn Tag noch NICHT existiert.
       # (Wenn du stattdessen "updaten" willst, nimm die if-Zeile raus.)
       - name: Create GitHub Release
@@ -112,6 +122,4 @@ jobs:
           fail_on_unmatched_files: true
           files: |
             dist/rebis-cards.js
-            dist/rebis-cards.js.map
-            dist/rebis-cards.js.sha256
-            dist/rebis-cards.js.map.sha256
+            ${{ steps.hasmap.outputs.map }}
